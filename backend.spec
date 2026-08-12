@@ -1,5 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 import os
+import audio_separator
+
 from PyInstaller.utils.hooks import collect_submodules
 
 hiddenimports = (
@@ -9,7 +11,7 @@ hiddenimports = (
     + ["scipy.signal", "scipy.fft"]
 )
 
-as_pkg = os.path.join(os.environ.get("VIRTUAL_ENV", os.path.expanduser("~/.local")), "lib", "python3.14", "site-packages", "audio_separator")
+as_pkg = os.path.dirname(os.path.abspath(audio_separator.__file__))
 
 a = Analysis(
     ["main.py"],
