@@ -38,7 +38,7 @@ jobs:
           pyinstaller --noconfirm backend.spec
           mkdir -p backend-dist src-tauri/resources/models src-tauri/binaries
           cp -R dist/8d-backend/_internal backend-dist/_internal
-          cp dist/8d-backend backend-dist/8d-backend
+          cp dist/8d-backend/8d-backend backend-dist/8d-backend
 
       - name: Stage sidecar binary
         run: |

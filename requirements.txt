@@ -4,4 +4,5 @@ python-multipart>=0.0.9
 audio-separator>=0.44
 onnxruntime>=1.17
 audioread>=3.0
+pillow>=10.0
 torch
