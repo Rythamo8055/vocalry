@@ -16,9 +16,9 @@ a = Analysis(
     pathex=["."],
     binaries=[],
     datas=[
-        ("static", "static"),
-        ("../renderer/8d_render.py", "."),
-        ("../renderer/hrtf/full.zip", "hrtf"),
+        (os.path.join(SPECPATH, "static"), "static"),
+        (os.path.join(SPECPATH, "renderer", "8d_render.py"), "."),
+        (os.path.join(SPECPATH, "renderer", "hrtf", "full.zip"), "hrtf"),
         (os.path.join(as_pkg, "models-scores.json"), "audio_separator"),
         (os.path.join(as_pkg, "models.json"), "audio_separator"),
         (os.path.join(as_pkg, "model-data.json"), "audio_separator"),
