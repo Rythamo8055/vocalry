@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>8D Studio — Stem Separator</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: system-ui, -apple-system, sans-serif;
+    background: #0f1115; color: #e6e8ee; min-height: 100vh;
+  }
+  header {
+    padding: 20px 28px; border-bottom: 1px solid #232733;
+    display: flex; align-items: baseline; gap: 14px;
+  }
+  header h1 { font-size: 20px; margin: 0; letter-spacing: 0.4px; }
+  header span { color: #6b7280; font-size: 13px; }
+  main { max-width: 860px; margin: 0 auto; padding: 24px 20px 80px; }
+  .card {
+    background: #171a21; border: 1px solid #262b36; border-radius: 14px;
+    padding: 22px; margin-bottom: 22px;
+  }
+  h2 { font-size: 15px; margin: 0 0 14px; color: #c9ced8; }
+  #drop {
+    border: 2px dashed #333a47; border-radius: 12px; padding: 34px;
+    text-align: center; color: #8b93a3; cursor: pointer; transition: all .15s;
+  }
+  #drop.over { border-color: #4f8cff; background: #18233a; color: #cfd9ef; }
+  #drop strong { color: #d6dae3; }
+  .presets { margin: 14px 0 4px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .presets button {
+    background: #1f2530; color: #aeb6c4; border: 1px solid #2d3442;
+    border-radius: 999px; padding: 6px 14px; font-size: 12.5px; cursor: pointer;
+  }
+  .presets button:hover { border-color: #4f8cff; color: #dde4f2; }
+  .stems { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin: 16px 0; }
+  .stem {
+    border: 1px solid #2b313d; border-radius: 10px; padding: 12px 14px;
+    cursor: pointer; display: flex; gap: 10px; align-items: center; user-select: none;
+  }
+  .stem input { accent-color: #4f8cff; width: 16px; height: 16px; }
+  .stem .emoji { font-size: 18px; }
+  .stem .lbl { font-size: 13.5px; }
+  .stem .sub { font-size: 11px; color: #6d7585; display: block; }
+  .stem.on { border-color: #4f8cff; background: #18233a; }
+  .opts { margin: 16px 0; display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+  .opts label { font-size: 13.5px; color: #aeb6c4; display: flex; gap: 8px; align-items: center; }
+  .opts input { accent-color: #4f8cff; }
+  #go {
+    width: 100%; padding: 13px; border: 0; border-radius: 11px; font-size: 15px;
+    background: #4f8cff; color: #fff; cursor: pointer; font-weight: 600;
+  }
+  #go:disabled { background: #2a3446; color: #66707f; cursor: not-allowed; }
+  #msg { font-size: 13px; margin-top: 10px; min-height: 18px; }
+  #msg.err { color: #ff7b72; }
+  .job {
+    background: #171a21; border: 1px solid #262b36; border-radius: 12px;
+    padding: 14px 16px; margin-bottom: 10px;
+  }
+  .job .top { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+  .job .name { font-size: 13.5px; font-weight: 600; word-break: break-all; }
+  .job .meta { font-size: 11.5px; color: #7c8494; }
+  .badge {
+    font-size: 11px; padding: 3px 10px; border-radius: 999px; white-space: nowrap; height: fit-content;
+  }
+  .b-queued { background: #2b313d; color: #aeb6c4; }
+  .b-running { background: #1c3a5f; color: #7cc0ff; }
+  .b-done { background: #173a27; color: #5fd08a; }
+  .b-failed { background: #3d1c1c; color: #ff8f8f; }
+  .bar { height: 7px; background: #232833; border-radius: 99px; overflow: hidden; }
+  .bar > div { height: 100%; width: 0%; background: linear-gradient(90deg, #4f8cff, #7cc0ff); transition: width .4s; }
+  .job .files { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .job .files a {
+    background: #1f2530; border: 1px solid #2d3442; color: #8fb8ff;
+    padding: 5px 12px; border-radius: 8px; font-size: 12px; text-decoration: none;
+  }
+  .job .files a:hover { border-color: #4f8cff; }
+  .job .err { color: #ff8f8f; font-size: 12px; margin-top: 8px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>8D Studio</h1>
+  <span>AI stem separation · queue of 5 · Mac / Linux / Windows</span>
+</header>
+<main>
+  <div class="card">
+    <h2>1 · Drop a song</h2>
+    <div id="drop">
+      <div><strong>Drag &amp; drop</strong> or click to choose<br>
+      mp3, wav, flac, m4a, ogg, aac</div>
+    </div>
+    <div class="presets">
+      <button data-preset="all">All 6 stems</button>
+      <button data-preset="vocals">Vocals only</button>
+      <button data-preset="4stem">Drums·Bass·Other</button>
+      <button data-preset="vocinst">Vocals + Instrumental</button>
+    </div>
+    <h2 style="margin-top:20px">2 · Pick stems to extract</h2>
+    <div class="stems" id="stems">
+      <label class="stem on"><input type="checkbox" value="vocals" checked><span class="emoji">🎤</span><span class="lbl">Vocals<span class="sub">lead + backing</span></span></label>
+      <label class="stem on"><input type="checkbox" value="drums" checked><span class="emoji">🥁</span><span class="lbl">Drums<span class="sub">kit + percussion</span></span></label>
+      <label class="stem on"><input type="checkbox" value="bass" checked><span class="emoji">🪕</span><span class="lbl">Bass<span class="sub">low end</span></span></label>
+      <label class="stem"><input type="checkbox" value="guitar"><span class="emoji">🎸</span><span class="lbl">Guitar<span class="sub">needs 6-stem model</span></span></label>
+      <label class="stem"><input type="checkbox" value="piano"><span class="emoji">🎹</span><span class="lbl">Piano<span class="sub">keys / synths</span></span></label>
+      <label class="stem on"><input type="checkbox" value="other" checked><span class="emoji">🎛️</span><span class="lbl">Other<span class="sub">everything left</span></span></label>
+    </div>
+    <div class="opts">
+      <label><input type="checkbox" id="make8d"> also make the 8D binaural mix</label>
+      <span style="font-size:12px;color:#6d7585">(adds ~1 min per song)</span>
+    </div>
+    <button id="go" disabled>Enqueue song</button>
+    <div id="msg"></div>
+  </div>
+
+  <h2 style="font-size:14px;color:#c9ced8;margin:0 0 12px">Queue <span id="qcount" style="color:#6d7585"></span></h2>
+  <div id="jobs"></div>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+const API = (window.location.origin.startsWith('tauri') || window.location.protocol === 'tauri:') ? 'http://127.0.0.1:8000' : '';
+const drop = $('#drop'), fileInput = document.createElement('input');
+fileInput.type = 'file'; fileInput.accept = '.mp3,.wav,.flac,.m4a,.ogg,.aac';
+let picked = null;
+
+drop.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', () => pick(fileInput.files[0]));
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('over'); pick(e.dataTransfer.files[0]); });
+
+function pick(f) {
+  if (!f) return;
+  picked = f;
+  drop.innerHTML = `<div><strong>${f.name}</strong><br>${(f.size/1048576).toFixed(1)} MB — ready</div>`;
+  $('#go').disabled = false;
+}
+
+document.querySelectorAll('.presets button').forEach(b => b.addEventListener('click', () => {
+  const p = b.dataset.preset;
+  const map = {
+    all: {vocals:1, drums:1, bass:1, guitar:1, piano:1, other:1},
+    vocals: {vocals:1, drums:0, bass:0, guitar:0, piano:0, other:0},
+    '4stem': {vocals:1, drums:1, bass:1, guitar:0, piano:0, other:1},
+    vocinst: {vocals:1, drums:0, bass:0, guitar:0, piano:0, other:0},
+  }[p];
+  document.querySelectorAll('.stems input').forEach(inp => { inp.checked = !!map[inp.value]; inp.closest('.stem').classList.toggle('on', inp.checked); });
+  if (p === 'vocinst') $('#make8d').checked = true;
+}));
+
+document.querySelectorAll('.stems input').forEach(inp => inp.addEventListener('change', () =>
+  inp.closest('.stem').classList.toggle('on', inp.checked)));
+
+$('#go').addEventListener('click', async () => {
+  if (!picked) return;
+  const stems = [...document.querySelectorAll('.stems input:checked')].map(i => i.value).join(',');
+  const fd = new FormData();
+  fd.append('file', picked);
+  fd.append('stems', stems);
+  fd.append('make_8d', $('#make8d').checked ? '1' : '0');
+  $('#go').disabled = true;
+  $('#msg').textContent = 'Enqueuing…';
+  try {
+    const r = await fetch(API + '/api/jobs', {method:'POST', body: fd});
+    if (!r.ok) throw new Error((await r.json()).detail || r.statusText);
+    $('#msg').textContent = `Queued.`;
+    picked = null;
+  } catch (e) {
+    $('#msg').classList.add('err'); $('#msg').textContent = e.message; $('#go').disabled = false;
+  }
+});
+
+const badge = {queued:'b-queued', running:'b-running', done:'b-done', failed:'b-failed'};
+const ST = {queued:'queued', running:'separating…', done:'done', failed:'failed'};
+
+async function refresh() {
+  let jobs = [];
+  try { jobs = await (await fetch(API + '/api/jobs')).json(); } catch { return; }
+  $('#qcount').textContent = jobs.filter(j => j.status === 'queued').length ? `(${jobs.filter(j=>j.status==='queued').length} waiting)` : '';
+  const box = $('#jobs');
+  box.innerHTML = '';
+  for (const j of jobs) {
+    const el = document.createElement('div');
+    el.className = 'job';
+    const files = j.outputs.map(f => `<a href="${API}/api/jobs/${j.id}/files/${encodeURIComponent(f)}">${f.replace(/\.[^.]+$/, '')} ↓</a>`).join('');
+    const zip = j.status === 'done' ? `<a href="${API}/api/jobs/${j.id}/zip">zip all ↓</a>` : '';
+    el.innerHTML = `
+      <div class="top"><span class="name">${j.name.replace(/</g,'&lt;')}</span>
+        <span class="badge ${badge[j.status]}">${ST[j.status]}</span></div>
+      <div class="bar"><div style="width:${j.progress}%"></div></div>
+      <div class="meta">${j.progress}% · ${j.stems.join(' + ')}${j.make_8d ? ' · 8D mix' : ''} · ${j.model}</div>
+      ${j.error ? `<div class="err">${j.error.replace(/</g,'&lt;')}</div>` : ''}
+      <div class="files">${files}${zip}</div>`;
+    box.appendChild(el);
+  }
+}
+refresh();
+setInterval(refresh, 2000);
+</script>
+</body>
+</html>

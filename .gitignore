@@ -1,0 +1,36 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+*.spec.bak
+
+# --- Build outputs ---
+build/
+dist/
+backend-dist/
+src-tauri/target/
+src-tauri/binaries/
+
+# --- Runtime data (local only) ---
+jobs/
+*.db
+*.db-journal
+src-tauri/resources/models/
+
+# --- AI model cache ---
+.audio-separator/
+
+# --- Logs ---
+*.log
+logs/
+
+# --- OS noise ---
+.DS_Store
+Thumbs.db
+
+# --- Editors ---
+.vscode/
+.idea/
+*.swp

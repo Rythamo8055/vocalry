@@ -1,0 +1,92 @@
+name: build
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  desktop:
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install system deps (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev patchelf ffmpeg
+
+      - name: Install ffmpeg (macOS)
+        if: runner.os == 'macOS'
+        run: brew install ffmpeg
+
+      - name: Install Python deps
+        run: |
+          pip install -r requirements.txt pyinstaller
+
+      - name: Build backend binary
+        run: |
+          pyinstaller --noconfirm backend.spec
+          mkdir -p backend-dist src-tauri/resources/models src-tauri/binaries
+          cp -R dist/8d-backend/_internal backend-dist/_internal
+          cp dist/8d-backend backend-dist/8d-backend
+
+      - name: Stage sidecar binary
+        run: |
+          case "${{ runner.os }}" in
+            macOS) TRIPLE="$(uname -m | sed 's/arm64/aarch64/')-apple-darwin" ;;
+            Linux) TRIPLE="$(uname -m)-unknown-linux-gnu" ;;
+          esac
+          if [ "${{ runner.os }}" = "macOS" ] && [ "$(uname -m)" = "arm64" ]; then TRIPLE="aarch64-apple-darwin"; fi
+          cp backend-dist/8d-backend "src-tauri/binaries/8d-backend-$TRIPLE"
+
+      - name: Download AI models
+        run: |
+          export MODEL_DIR="${{ github.workspace }}/src-tauri/resources/models"
+          for m in htdemucs_6s.yaml htdemucs_ft.yaml MDX23C-8KFFT-InstVoc_HQ.ckpt; do
+            audio-separator -m "$m" --model_file_dir "$MODEL_DIR" --download_model_only
+          done
+
+      - name: Install Tauri CLI
+        run: npm install -g @tauri-apps/cli
+
+      - name: Generate icons
+        run: python3 scripts/gen_icon.py && tauri icon src-tauri/icons/icon.png
+
+      - name: Build app
+        run: tauri build
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: vocalry-${{ runner.os }}
+          path: |
+            src-tauri/target/release/bundle/*
+
+  release:
+    needs: desktop
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: vocalry-*
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            **/*.dmg
+            **/*.AppImage
+            **/*.deb
+            **/*.app.tar.gz
