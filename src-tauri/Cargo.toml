@@ -1,5 +1,5 @@
 [package]
-name = "8d-studio"
+name = "vocalry"
 version = "0.1.0"
 description = "8D Studio — AI stem separation and binaural mixing"
 edition = "2021"
