@@ -38,7 +38,7 @@ echo "== 3/6 building backend binary with PyInstaller"
 rm -rf build backend-dist
 pyinstaller --noconfirm backend.spec
 cp -R dist/8d-backend/_internal backend-dist/_internal
-cp dist/8d-backend backend-dist/8d-backend
+cp dist/8d-backend/8d-backend backend-dist/8d-backend
 
 echo "== 4/6 preparing models + icons"
 mkdir -p src-tauri/resources/models
