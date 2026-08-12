@@ -8,7 +8,7 @@ jobs:
   desktop:
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest]
+        os: [macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -42,6 +42,7 @@ jobs:
 
       - name: Stage sidecar binary
         run: |
+          echo "arch=$(uname -m)"
           case "${{ runner.os }}" in
             macOS) TRIPLE="$(uname -m | sed 's/arm64/aarch64/')-apple-darwin" ;;
             Linux) TRIPLE="$(uname -m)-unknown-linux-gnu" ;;
